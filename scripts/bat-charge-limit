@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+show_thresholds() {
+    local min=$(cat /sys/class/power_supply/BAT0/charge_control_start_threshold);
+    local max=$(cat /sys/class/power_supply/BAT0/charge_control_end_threshold);
+    echo "min: $min%, max: $max%";
+}
+
+set_thresholds() {
+    # set limits to max range to avoid errors
+    sudo su -c "echo 0 > /sys/class/power_supply/BAT0/charge_control_start_threshold";
+    sudo su -c "echo 100 > /sys/class/power_supply/BAT0/charge_control_end_threshold";
+
+    # set limits per input
+    sudo su -c "echo $1 > /sys/class/power_supply/BAT0/charge_control_start_threshold";
+    sudo su -c "echo $2 > /sys/class/power_supply/BAT0/charge_control_end_threshold";
+}
+
+echo -n "Acquiring sudo... ";
+sudo echo "all good!";
+echo;
+
+echo -n "Current charge thresholds - ";
+show_thresholds;
+echo;
+
+read -p "Please enter new max charge threshold (40): " max_limit;
+max_limit="${max_limit:-40}";
+min_limit="$(($max_limit-5))";
+
+echo "Setting new charge thresholds to min: $min_limit%, max: $max_limit%";
+echo;
+
+echo -n "Setting charge thresholds... ";
+set_thresholds $min_limit $max_limit;
+echo "all good!";
+echo;
+
+echo -n "New charge thresholds - ";
+show_thresholds;
+echo;
